@@ -1,18 +1,23 @@
-import { AlertCardProps } from "@/types";
+import React from 'react';
 import { Card, CardBody } from "@nextui-org/react";
 
-const AlertCard: React.FC<AlertCardProps> = ({
-  startContent,
-  alertMessage,
-  endContent,
-  className,
-}) => {
+interface AlertCardProps {
+  message: string;
+  type: "success" | "error" | "warning" | "info";
+}
+
+const AlertCard: React.FC<AlertCardProps> = ({ message, type }) => {
+  const bgColor = {
+    success: "bg-green-100",
+    error: "bg-red-100",
+    warning: "bg-yellow-100",
+    info: "bg-blue-100",
+  };
+
   return (
-    <Card className={`bg-rose-100 border-rose-500 border ${className}`}>
-      <CardBody className="flex flex-row gap-3 items-center">
-        {startContent}
-        <p className="text-rose-700">{alertMessage}</p>
-        {endContent}
+    <Card className={`${bgColor[type]} w-full`}>
+      <CardBody>
+        <p>{message}</p>
       </CardBody>
     </Card>
   );

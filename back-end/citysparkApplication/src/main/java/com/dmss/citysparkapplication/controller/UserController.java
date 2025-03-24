@@ -15,6 +15,9 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @RestController
 @CrossOrigin(exposedHeaders = {"Access-Control-Allow-Origin","Access-Control-Allow-Credentials"})
 @RequestMapping("/cityspark/user")
@@ -33,18 +36,36 @@ public class UserController {
     }
 
     @PostMapping("/create")
-    public boolean createUser(@RequestBody UserDTO user) {
-        return userService.createUser(user);
+    public ResponseEntity<?> createUser(@RequestBody UserDTO user) {
+        boolean success = userService.createUser(user);
+        if (success) {
+            return ResponseEntity.ok().body(Map.of("message", "User created successfully"));
+        }
+        return ResponseEntity.badRequest().body(Map.of("message", "Failed to create user"));
     }
 
     @PostMapping("/auth")
-    public ResponseEntity<String> authenticateUser(@RequestBody UserDTO user) {
+    public ResponseEntity<?> authenticateUser(@RequestBody UserDTO user) {
         try {
-            Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(user.getEmail(), user.getPassword()));
+            Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(user.getEmail(), user.getPassword())
+            );
             SecurityContextHolder.getContext().setAuthentication(authentication);
-            return ResponseEntity.ok("User authenticated");
+            
+            User authenticatedUser = userService.getUserByEmail(user.getEmail()).orElse(null);
+            if (authenticatedUser != null) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("message", "User authenticated");
+                response.put("user", Map.of(
+                    "id", authenticatedUser.getId(),
+                    "email", authenticatedUser.getEmail(),
+                    "createdDate", authenticatedUser.getCreatedDate()
+                ));
+                return ResponseEntity.ok(response);
+            }
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "User not found"));
         } catch (AuthenticationException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication failed");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Authentication failed"));
         }
     }
 }
